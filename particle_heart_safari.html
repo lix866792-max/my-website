@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>粒子爱心（Safari兼容）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body { height: 100%; margin: 0; background: #000; }
+    canvas { position: fixed; top: 0; left: 0; z-index: 1; width: 100vw; height: 100vh; }
+    .overlay { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; color: rgba(255,182,193,.9); width: 80%; max-width: 800px; pointer-events: none; text-shadow: 0 0 10px rgba(255,182,193,.5); animation: breathe 3s ease-in-out infinite; }
+    h1 { margin: 0 0 16px; font-size: 2.2em; letter-spacing: 4px; }
+    p { margin: 0; font-size: 1.05em; line-height: 1.8; white-space: pre-line; }
+    @keyframes breathe { 0%,100%{opacity:.85;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.02)} }
+    .hint { position: fixed; bottom: 8px; left: 0; right: 0; text-align: center; color: #fff; font-size: 12px; opacity: .7; font-family: system-ui, -apple-system, "Microsoft YaHei", sans-serif; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <h1>致 刘慧慧</h1>
+    <p>不知不觉就快到2026年了。
+这一年里，希望你走过的每一步都算数，经历的所有事情都在慢慢成就更好的你。
+愿你在新的一年里，
+有方向可循，有热爱可守，
+有疲惫时能安心休息，
+也有开心时有人分享。
+无论未来多忙、多远，
+都希望你能被生活温柔以待，
+也始终对世界、对自己保持热忱。
+新的一年，
+愿你平安、顺利，也愿你心里常有光。</p>
+  </div>
+  <canvas id="cv"></canvas>
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d', { alpha: false });
+    let W=0, H=0, particles=[];
+    const COUNT = 1000;
+    function resize(){
+      W = window.innerWidth;
+      H = window.innerHeight;
+      cv.width = W;
+      cv.height = H;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    function heart(t){
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
+      return { x, y };
+    }
+    class P {
+      constructor(){ this.reset(); }
+      reset(){
+        this.t = Math.random() * Math.PI * 2;
+        const h = heart(this.t);
+        const scale = Math.min(W,H)/35;
+        const r = Math.random();
+        const len = r<0.3 ? Math.sqrt(Math.random())*0.8 : (r<0.9 ? Math.sqrt(Math.random()) : 1 + Math.random()*0.2);
+        this.ox = h.x * scale * len;
+        this.oy = h.y * scale * len;
+        this.x = this.ox;
+        this.y = this.oy;
+        this.layer = len;
+        this.size = Math.random()*1.8 + 0.6;
+        this.h = 340 + Math.random()*20;
+        this.s = 80 + Math.random()*20;
+        this.l = 60 + Math.random()*20;
+      }
+      update(bs){
+        const s = 1 + (bs - 1) * this.layer;
+        const tx = this.ox * s, ty = this.oy * s;
+        this.x += (tx - this.x) * 0.12;
+        this.y += (ty - this.y) * 0.12;
+      }
+      draw(){
+        ctx.fillStyle = `hsl(${this.h}, ${this.s}%, ${this.l}%)`;
+        ctx.beginPath();
+        ctx.arc(W/2 + this.x, H/2 + this.y, this.size, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    particles = Array.from({length: COUNT}, () => new P());
+    function loop(now){
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0,0,W,H);
+      const t = now/1000;
+      const h = (Math.sin(t*6) + 1.2*Math.sin(t*6 + Math.PI/3) * Math.pow(Math.sin(t*6),2)) * 0.03;
+      const bs = 1 + h;
+      for(const p of particles){ p.update(bs); p.draw(); }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+  <div class="hint">若手机浏览器地址栏遮挡，建议横屏或全屏模式</div>
+</body>
+</html>
