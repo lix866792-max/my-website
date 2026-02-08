@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>致 肖三秀</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        .content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            text-align: center;
+            color: #ffb6c1;
+            width: 90%;
+            max-width: 600px;
+            pointer-events: none; /* 让点击穿透到canvas */
+            text-shadow: 0 0 10px rgba(255, 182, 193, 0.5);
+        }
+        .name {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        .message {
+            font-size: 1.1em;
+            line-height: 1.6;
+            opacity: 0;
+            animation: fadeIn 3s forwards 1s;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .name { font-size: 2em; }
+            .message { font-size: 1em; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="heart"></canvas>
+    <div class="content">
+        <div class="name">致 肖三秀</div>
+        <div class="message">
+            不知不觉就快到2026年了。<br>
+            这一年里，希望你走过的每一步都算数，<br>
+            经历的所有事情都在慢慢成就更好的你。<br>
+            愿你在新的一年里，<br>
+            有方向可循，有热爱可守，<br>
+            有疲惫时能安心休息，<br>
+            也有开心时有人分享。<br>
+            无论未来多忙、多远，<br>
+            都希望你能被生活温柔以待，<br>
+            也始终对世界、对自己保持热忱。<br>
+            新的一年，<br>
+            愿你平安、顺利，也愿你心里常有光。
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('heart');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function getHeartPoint(t) {
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            return { x, y };
+        }
+
+        class Particle {
+            constructor() {
+                this.reset(true, 1);
+            }
+
+            reset(initial = false, beat = 1) {
+                this.t = Math.random() * 2 * Math.PI;
+                const pos = getHeartPoint(this.t);
+                
+                // 适配不同屏幕尺寸的缩放
+                const minDim = Math.min(width, height);
+                this.baseScale = (minDim / 40) * beat; // 爱心大小随心跳变化
+                
+                // 基础位置（爱心轮廓）
+                const heartX = width / 2 + pos.x * this.baseScale;
+                const heartY = height / 2 + pos.y * this.baseScale;
+
+                // 扩散效果
+                const dist = initial ? Math.random() * 5 : Math.random() * 20;
+                const angle = Math.random() * 2 * Math.PI;
+                
+                this.x = heartX + Math.cos(angle) * dist;
+                this.y = heartY + Math.sin(angle) * dist;
+                
+                // 颜色 - 更加鲜艳
+                this.color = `hsla(340, 80%, ${50 + Math.random() * 30}%, ${0.5 + Math.random() * 0.5})`;
+                this.size = Math.random() * 2 + 1;
+                
+                // 运动参数 - 速度稍快
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01; // 消失得稍快一点
+            }
+
+            update(beat) {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+
+                if (this.life <= 0) {
+                    this.reset(false, beat);
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        const particles = [];
+        const particleCount = 600; // 增加粒子数量
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // 减小透明度，让拖尾更长，更有流动感
+            ctx.fillRect(0, 0, width, height);
+            
+            // 计算心跳因子
+            const time = Date.now() / 1000;
+            // 模拟心跳节奏：收缩-舒张
+            const beat = 1 + 0.15 * Math.pow(Math.sin(time * 3), 4); 
+            
+            particles.forEach(p => {
+                p.update(beat);
+                p.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
